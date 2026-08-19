@@ -23,6 +23,10 @@ export function useFileWatcher(
       if (cancelled) return;
       try {
         const size = await invoke<number>("get_file_size", { path: filePath });
+        // 로그 로테이션 대응: 파일이 이전 위치보다 작아졌으면(삭제 후 재생성 등) 처음부터 다시 읽기
+        if (size < filePosRef.current) {
+          filePosRef.current = 0;
+        }
         if (size > filePosRef.current) {
           const result = await invoke<{ lines: LogLine[]; new_pos: number }>(
             "read_lines_from_pos",
