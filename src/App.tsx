@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import Sidebar from "./components/Sidebar";
+import FilePathBar from "./components/FilePathBar";
 import TabBar from "./components/TabBar";
 import LogViewer from "./components/LogViewer";
 import Toolbar from "./components/Toolbar";
@@ -14,7 +15,7 @@ export default function App() {
   const { loadBookmarks } = useBookmarkStore();
   const { loadConnections } = useSshStore();
   const { addTab } = useTabStore();
-  const { defaultEncoding } = useSettingsStore();
+  const { defaultEncoding, sidebarHidden } = useSettingsStore();
   const [isDragOver, setIsDragOver] = useState(false);
   const { state: updateState, install: installUpdate, dismiss: dismissUpdate } = useUpdater();
 
@@ -73,8 +74,11 @@ export default function App() {
       style={{ height: "100vh", backgroundColor: "var(--color-bg-primary)", position: "relative" }}
     >
       <TabBar />
+      <FilePathBar />
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar />
+        <div style={{ display: sidebarHidden ? "none" : "contents" }}>
+          <Sidebar />
+        </div>
         <LogViewer onRegisterExport={onRegisterExport} onRegisterClear={onRegisterClear} displayLineCountRef={displayLineCountRef} />
       </div>
       <Toolbar

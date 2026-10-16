@@ -7,12 +7,14 @@ interface SettingsStore {
   defaultTailLines: number;
   language: Language;
   sidebarCollapsed: boolean;
+  sidebarHidden: boolean;
   sidebarWidth: number;
   wrapLines: boolean;
   setDefaultEncoding: (encoding: string) => void;
   setDefaultTailLines: (lines: number) => void;
   setLanguage: (lang: Language) => void;
   setSidebarCollapsed: (v: boolean) => void;
+  setSidebarHidden: (v: boolean) => void;
   setSidebarWidth: (w: number) => void;
   setWrapLines: (v: boolean) => void;
 }
@@ -23,12 +25,14 @@ export const useSettingsStore = create<SettingsStore>((set) => ({
   defaultTailLines: 1000,
   language: "ko",
   sidebarCollapsed: false,
+  sidebarHidden: false,
   sidebarWidth: 220,
   wrapLines: false,
   setDefaultEncoding: (encoding) => set({ defaultEncoding: encoding }),
   setDefaultTailLines: (lines) => set({ defaultTailLines: lines }),
   setLanguage: (language) => set({ language }),
   setSidebarCollapsed: (sidebarCollapsed) => set({ sidebarCollapsed }),
+  setSidebarHidden: (sidebarHidden) => set({ sidebarHidden }),
   setSidebarWidth: (sidebarWidth) => set({ sidebarWidth }),
   setWrapLines: (wrapLines) => set({ wrapLines }),
 }));

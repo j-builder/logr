@@ -3,6 +3,13 @@
 이 프로젝트의 주요 변경사항을 버전별로 기록합니다.
 [Keep a Changelog](https://keepachangelog.com/ko/1.0.0/) 형식을 따르며, [Semantic Versioning](https://semver.org/lang/ko/)을 사용합니다.
 
+## [0.2.20] - 2026-10-16
+
+### 추가 (Added)
+- 로그파일 경로를 붙여넣고 Enter 또는 열기 버튼으로 파일 열기 (따옴표로 감싼 경로 지원)
+- 왼쪽 파일 목록 전체 숨기기 및 다시 표시하기
+- 현재 로컬 및 SSH 파일의 전체 경로 표시, 선택 및 복사 버튼
+
 ## [0.2.19] - 2026-08-20
 
 ### 수정 (Fixed)
