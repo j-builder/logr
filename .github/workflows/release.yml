@@ -65,7 +65,10 @@ jobs:
             ### 다운로드
             - **macOS (Apple Silicon)**: `Logr_*_aarch64.dmg`
             - **macOS (Intel)**: `Logr_*_x64.dmg`
-            - **Windows**: `Logr_*_x64_en-US.msi`
+            - **Windows**: `Logr_*_x64_ko-KR.msi`
+
+            macOS용 앱은 임시 서명되어 있습니다. DMG에서 Logr를 응용 프로그램 폴더로 복사한 뒤 실행하세요.
+            처음 실행할 때 개발자 확인 경고가 뜨면 시스템 설정 → 개인정보 보호 및 보안에서 Logr의 ‘그래도 열기’를 선택하세요.
 
             ### 주요 기능
             - 멀티탭 실시간 로그 모니터링
@@ -75,9 +78,20 @@ jobs:
             - SSH 원격 파일 지원
             - 인코딩 자동 감지 (UTF-8, EUC-KR, CP949, UTF-16)
             - 내보내기 (.txt / .csv)
-          releaseDraft: false
+          releaseDraft: true
           prerelease: false
           args: --target ${{ matrix.target }}
+
+      - name: Verify macOS app signatures
+        if: runner.os == 'macOS'
+        run: |
+          set -euo pipefail
+          bundles="src-tauri/target/${{ matrix.target }}/release/bundle"
+          codesign --verify --deep --strict --verbose=2 "$bundles/macos/Logr.app"
+          mountpoint=$(mktemp -d)
+          hdiutil attach -readonly -nobrowse -mountpoint "$mountpoint" "$bundles"/dmg/*.dmg
+          trap 'hdiutil detach "$mountpoint"' EXIT
+          codesign --verify --deep --strict --verbose=2 "$mountpoint/Logr.app"
 
       - name: Upload macOS updater bundle
         if: runner.os == 'macOS'
@@ -196,3 +210,4 @@ jobs:
           cat /tmp/latest.json
 
           gh release upload "${TAG}" /tmp/latest.json --repo "${GH_REPO}" --clobber
+          gh release edit "${TAG}" --repo "${GH_REPO}" --draft=false --latest

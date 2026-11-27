@@ -3,6 +3,11 @@
 이 프로젝트의 주요 변경사항을 버전별로 기록합니다.
 [Keep a Changelog](https://keepachangelog.com/ko/1.0.0/) 형식을 따르며, [Semantic Versioning](https://semver.org/lang/ko/)을 사용합니다.
 
+## [0.2.21] - 2026-11-28
+
+### 수정 (Fixed)
+- macOS에서 Logr가 “손상되었기 때문에 열 수 없습니다”로 차단되던 문제를 수정했습니다. Apple Silicon 및 Intel용 앱 전체에 임시 서명을 적용하고 배포 전에 DMG 안의 앱 서명을 검증합니다.
+
 ## [0.2.20] - 2026-10-16
 
 ### 추가 (Added)
