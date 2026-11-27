@@ -5,7 +5,8 @@ import { useBookmarkStore } from "../../stores/bookmarkStore";
 import { useTabStore } from "../../stores/tabStore";
 import { useSettingsStore } from "../../stores/settingsStore";
 import { useSshStore } from "../../stores/sshStore";
-import { SshConnection } from "../../types";
+import FileExplorer from "./FileExplorer";
+import { Bookmark, SshConnection } from "../../types";
 import { SshConnectionFormDialog, SshOpenFileDialog } from "../SshConnectDialog";
 import { useT } from "../../i18n";
 
@@ -28,6 +29,28 @@ export default function Sidebar() {
 
   const [sshDialog, setSshDialog] = useState<SshDialog | null>(null);
   const [connectingBmId, setConnectingBmId] = useState<string | null>(null);
+
+  const [panel, setPanel] = useState<"bookmarks" | "explorer">("bookmarks");
+  const [folder, setFolder] = useState<string | null>(null);
+
+  const navigateFolder = (path: string) => {
+    setFolder(path);
+    setPanel("explorer");
+  };
+
+  const bookmarkFolder = (path: string) =>
+    addBookmark({ kind: "folder", filePath: path, alias: path.split(/[\\/]/).pop() || path });
+
+  const chooseFolder = async (save: boolean) => {
+    try {
+      const path = await open({ directory: true, multiple: false, defaultPath: folder ?? undefined });
+      if (!path) return;
+      if (save) await bookmarkFolder(path);
+      else navigateFolder(path);
+    } catch (error) {
+      alert(String(error));
+    }
+  };
 
   // 리사이즈 드래그
   const isDragging = useRef(false);
@@ -55,21 +78,23 @@ export default function Sidebar() {
     document.addEventListener("mouseup", onMouseUp);
   }, [sidebarWidth, setSidebarWidth]);
 
+  const openLocalFile = async (filePath: string) => {
+    const fileName = filePath.split(/[\\/]/).pop() ?? filePath;
+    let encoding = defaultEncoding;
+    try { encoding = await invoke<string>("detect_encoding", { path: filePath }); } catch {}
+    addTab({ filePath, alias: fileName, encoding, isFollowing: true });
+  };
+
   const handleOpenFile = async () => {
     const selected = await open({ multiple: true });
     const paths = Array.isArray(selected) ? selected : selected ? [selected] : [];
-    for (const filePath of paths) {
-      const fileName = filePath.split(/[\\/]/).pop() ?? filePath;
-      let encoding = defaultEncoding;
-      try { encoding = await invoke<string>("detect_encoding", { path: filePath }); } catch {}
-      addTab({ filePath, alias: fileName, encoding, isFollowing: true });
-    }
+    for (const filePath of paths) await openLocalFile(filePath);
   };
 
   const handleAddBookmark = async () => {
     if (!activeTab) return;
     const alreadyExists = bookmarks.some(
-      (b) => b.filePath === activeTab.filePath && b.sshConnectionId === activeTab.sshConnectionId
+      (b) => b.kind !== "folder" && b.filePath === activeTab.filePath && b.sshConnectionId === activeTab.sshConnectionId
     );
     if (alreadyExists) return;
     await addBookmark({
@@ -80,7 +105,12 @@ export default function Sidebar() {
     });
   };
 
-  const handleOpenBookmark = async (bmId: string, filePath: string, alias: string, encoding: string, sshConnectionId?: string) => {
+  const handleOpenBookmark = async (bookmark: Bookmark) => {
+    if (bookmark.kind === "folder") {
+      navigateFolder(bookmark.filePath);
+      return;
+    }
+    const { id: bmId, filePath, alias, encoding, sshConnectionId } = bookmark;
     if (!sshConnectionId) {
       addTab({ filePath, alias, encoding, isFollowing: true });
       return;
@@ -129,7 +159,7 @@ export default function Sidebar() {
   };
 
   const isCurrentBookmarked = activeTab
-    ? bookmarks.some((b) => b.filePath === activeTab.filePath && b.sshConnectionId === activeTab.sshConnectionId)
+    ? bookmarks.some((b) => b.kind !== "folder" && b.filePath === activeTab.filePath && b.sshConnectionId === activeTab.sshConnectionId)
     : false;
 
   // ── 접힌 상태: 아이콘 스트립 ──
@@ -160,10 +190,15 @@ export default function Sidebar() {
         <button
           className="w-8 h-8 flex items-center justify-center rounded hover:opacity-80 transition-opacity text-sm"
           style={{ color: bookmarks.length > 0 ? "var(--color-accent)" : "var(--color-text-secondary)" }}
-          onClick={() => setSidebarCollapsed(false)}
+          onClick={() => { setPanel("bookmarks"); setSidebarCollapsed(false); }}
           title={`${t("sidebar.bookmarks")} (${bookmarks.length})`}
         >
           ★
+        </button>
+
+        <button className="w-8 h-8 text-sm" title={t("sidebar.explorer")} aria-label={t("sidebar.explorer")}
+          onClick={() => { setPanel("explorer"); setSidebarCollapsed(false); }}>
+          📁
         </button>
 
         {/* SSH */}
@@ -218,82 +253,100 @@ export default function Sidebar() {
           >
             ‹
           </button>
-          <span>{t("sidebar.bookmarks")}</span>
+          {(["bookmarks", "explorer"] as const).map((name) => (
+            <button key={name} aria-pressed={panel === name} onClick={() => setPanel(name)}
+              className={panel === name ? "text-accent border-b border-accent" : "hover:text-text-primary"}>
+              {t(name === "bookmarks" ? "sidebar.bookmarks" : "sidebar.explorer")}
+            </button>
+          ))}
         </div>
-        <button
-          className="hover:opacity-80 transition-opacity text-sm"
-          style={{
-            color: isCurrentBookmarked ? "var(--color-text-secondary)" : "var(--color-accent)",
-            cursor: activeTab && !isCurrentBookmarked ? "pointer" : "default",
-            opacity: activeTab && !isCurrentBookmarked ? 1 : 0.4,
-          }}
-          onClick={handleAddBookmark}
-          title={
-            !activeTab ? t("sidebar.openFileFirst")
-            : isCurrentBookmarked ? t("sidebar.alreadyBookmarked")
-            : t("sidebar.addBookmark")
-          }
-          disabled={!activeTab || isCurrentBookmarked}
-        >
-          ★
-        </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto min-h-0" style={{ userSelect: "text" }}>
-        {bookmarks.length === 0 ? (
-          <div
-            className="flex flex-col items-center justify-center h-full gap-2 px-4 text-center text-xs"
-            style={{ color: "var(--color-text-secondary)" }}
+      {panel === "explorer" ? (
+        <FileExplorer key={folder} folder={folder}
+          bookmarked={bookmarks.some((bm) => bm.kind === "folder" && bm.filePath === folder)}
+          onChoose={() => chooseFolder(false)} onNavigate={navigateFolder}
+          onBookmark={bookmarkFolder} onOpenFile={openLocalFile} />
+      ) : <>
+        <div className="flex flex-wrap items-center gap-3 px-3 py-1.5 text-xs border-b border-border">
+          <button className="text-accent" onClick={() => chooseFolder(true)}>+ {t("sidebar.addFolder")}</button>
+          <button
+            className="hover:opacity-80 transition-opacity text-sm"
+            style={{
+              color: isCurrentBookmarked ? "var(--color-text-secondary)" : "var(--color-accent)",
+              cursor: activeTab && !isCurrentBookmarked ? "pointer" : "default",
+              opacity: activeTab && !isCurrentBookmarked ? 1 : 0.4,
+            }}
+            onClick={handleAddBookmark}
+            title={
+              !activeTab ? t("sidebar.openFileFirst")
+              : isCurrentBookmarked ? t("sidebar.alreadyBookmarked")
+              : t("sidebar.addBookmark")
+            }
+            disabled={!activeTab || isCurrentBookmarked}
           >
-            <span style={{ fontSize: 24 }}>📌</span>
-            <span>{t("sidebar.noBookmarks")}</span>
-            <span>{t("sidebar.noBookmarksHint")}</span>
-          </div>
-        ) : (
-          <ul className="py-1">
-            {bookmarks.map((bm) => {
-              const isConnecting = connectingBmId === bm.id;
-              const sshConn = bm.sshConnectionId ? connections.find((c) => c.id === bm.sshConnectionId) : null;
-              return (
-                <li key={bm.id} className="group flex items-center">
-                  <button
-                    className="flex-1 text-left px-3 py-2 text-xs truncate hover:opacity-80 transition-opacity min-w-0"
-                    style={{ color: isConnecting ? "var(--color-text-secondary)" : "var(--color-text-primary)", backgroundColor: "transparent" }}
-                    onClick={() => handleOpenBookmark(bm.id, bm.filePath, bm.alias, bm.encoding, bm.sshConnectionId)}
-                    title={bm.sshConnectionId ? `[SSH] ${sshConn ? `${sshConn.host}:` : ""}${bm.filePath}` : bm.filePath}
-                    disabled={isConnecting}
-                  >
-                    <div className="flex items-center gap-1 truncate font-medium">
-                      {bm.sshConnectionId && (
-                        <span style={{ color: "var(--color-accent)", fontSize: 9, opacity: 0.8, flexShrink: 0 }}>SSH</span>
-                      )}
-                      <span className="truncate">
-                        {isConnecting ? "연결 중…" : (bm.alias || bm.filePath.split(/[\\/]/).pop())}
-                      </span>
-                    </div>
-                    {bm.sshConnectionId && sshConn && (
-                      <div className="truncate" style={{ color: "var(--color-text-secondary)", fontSize: 10 }}>
-                        {sshConn.host}
+            ★
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto min-h-0" style={{ userSelect: "text" }}>
+          {bookmarks.length === 0 ? (
+            <div
+              className="flex flex-col items-center justify-center h-full gap-2 px-4 text-center text-xs"
+              style={{ color: "var(--color-text-secondary)" }}
+            >
+              <span style={{ fontSize: 24 }}>📌</span>
+              <span>{t("sidebar.noBookmarks")}</span>
+              <span>{t("sidebar.noBookmarksHint")}</span>
+            </div>
+          ) : (
+            <ul className="py-1">
+              {bookmarks.map((bm) => {
+                const isConnecting = connectingBmId === bm.id;
+                const sshConn = bm.sshConnectionId ? connections.find((c) => c.id === bm.sshConnectionId) : null;
+                return (
+                  <li key={bm.id} className="group flex items-center">
+                    <button
+                      className="flex-1 text-left px-3 py-2 text-xs truncate hover:opacity-80 transition-opacity min-w-0"
+                      style={{ color: isConnecting ? "var(--color-text-secondary)" : "var(--color-text-primary)", backgroundColor: "transparent" }}
+                      onClick={() => handleOpenBookmark(bm)}
+                      title={bm.sshConnectionId ? `[SSH] ${sshConn ? `${sshConn.host}:` : ""}${bm.filePath}` : bm.filePath}
+                      disabled={isConnecting}
+                    >
+                      <div className="flex items-center gap-1 truncate font-medium">
+                        {bm.kind === "folder" && <span aria-hidden="true">📁</span>}
+                        {bm.sshConnectionId && (
+                          <span style={{ color: "var(--color-accent)", fontSize: 9, opacity: 0.8, flexShrink: 0 }}>SSH</span>
+                        )}
+                        <span className="truncate">
+                          {isConnecting ? "연결 중…" : (bm.alias || bm.filePath.split(/[\\/]/).pop())}
+                        </span>
                       </div>
-                    )}
-                    {!bm.sshConnectionId && bm.group && (
-                      <div className="truncate text-xs" style={{ color: "var(--color-text-secondary)" }}>{bm.group}</div>
-                    )}
-                  </button>
-                  <button
-                    className="opacity-0 group-hover:opacity-60 hover:!opacity-100 px-2 transition-opacity text-xs shrink-0"
-                    style={{ color: "var(--color-text-secondary)" }}
-                    onClick={() => removeBookmark(bm.id)}
-                    title={t("sidebar.removeBookmark")}
-                  >
-                    ✕
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
+                      {bm.sshConnectionId && sshConn && (
+                        <div className="truncate" style={{ color: "var(--color-text-secondary)", fontSize: 10 }}>
+                          {sshConn.host}
+                        </div>
+                      )}
+                      {!bm.sshConnectionId && bm.group && (
+                        <div className="truncate text-xs" style={{ color: "var(--color-text-secondary)" }}>{bm.group}</div>
+                      )}
+                    </button>
+                    <button
+                      className="opacity-0 group-hover:opacity-60 hover:!opacity-100 px-2 transition-opacity text-xs shrink-0"
+                      style={{ color: "var(--color-text-secondary)" }}
+                      onClick={() => removeBookmark(bm.id)}
+                      title={t("sidebar.removeBookmark")}
+                    >
+                      ✕
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+
+      </>}
 
       {/* ── SSH 접속 ── */}
       <div className="shrink-0" style={{ borderTop: "1px solid var(--color-border)" }}>

@@ -1,6 +1,6 @@
 [package]
 name = "logr"
-version = "0.2.21"
+version = "0.2.22"
 description = "Realtime log viewer — a GUI replacement for Unix tail -f"
 authors = []
 edition = "2021"
@@ -38,3 +38,7 @@ russh-keys = "0.44"
 async-trait = "0.1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+walkdir = "2"
+
+[dev-dependencies]
+tempfile = "3"
