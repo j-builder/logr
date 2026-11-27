@@ -22,7 +22,7 @@ const COLLAPSED_WIDTH = 44;
 export default function Sidebar() {
   const t = useT();
   const { bookmarks, addBookmark, removeBookmark } = useBookmarkStore();
-  const { addTab, getActiveTab } = useTabStore();
+  const { addTab, getActiveTab, updateTab } = useTabStore();
   const { defaultEncoding, sidebarCollapsed, sidebarWidth, setSidebarCollapsed, setSidebarWidth } = useSettingsStore();
   const { connections, addConnection, updateConnection, removeConnection, connectedIds, setConnected } = useSshStore();
   const activeTab = getActiveTab();
@@ -41,12 +41,11 @@ export default function Sidebar() {
   const bookmarkFolder = (path: string) =>
     addBookmark({ kind: "folder", filePath: path, alias: path.split(/[\\/]/).pop() || path });
 
-  const chooseFolder = async (save: boolean) => {
+  const chooseBookmarkFolder = async () => {
     try {
       const path = await open({ directory: true, multiple: false, defaultPath: folder ?? undefined });
       if (!path) return;
-      if (save) await bookmarkFolder(path);
-      else navigateFolder(path);
+      await bookmarkFolder(path);
     } catch (error) {
       alert(String(error));
     }
@@ -80,9 +79,16 @@ export default function Sidebar() {
 
   const openLocalFile = async (filePath: string) => {
     const fileName = filePath.split(/[\\/]/).pop() ?? filePath;
-    let encoding = defaultEncoding;
-    try { encoding = await invoke<string>("detect_encoding", { path: filePath }); } catch {}
-    addTab({ filePath, alias: fileName, encoding, isFollowing: true });
+    const existing = useTabStore.getState().tabs.find((tab) => !tab.sshConnectionId && tab.filePath === filePath);
+    const id = addTab({ filePath, alias: fileName, encoding: defaultEncoding, isFollowing: true });
+    if (existing) return;
+    try {
+      const encoding = await invoke<string>("detect_encoding", { path: filePath });
+      const tab = useTabStore.getState().tabs.find((item) => item.id === id);
+      if (tab?.encoding === defaultEncoding && encoding !== defaultEncoding) updateTab(id, { encoding });
+    } catch {
+      // The viewer reports any read error using the selected file's path.
+    }
   };
 
   const handleOpenFile = async () => {
@@ -264,12 +270,12 @@ export default function Sidebar() {
 
       {panel === "explorer" ? (
         <FileExplorer key={folder} folder={folder}
-          bookmarked={bookmarks.some((bm) => bm.kind === "folder" && bm.filePath === folder)}
-          onChoose={() => chooseFolder(false)} onNavigate={navigateFolder}
+          bookmarks={bookmarks} activeFile={activeTab?.sshConnectionId ? undefined : activeTab?.filePath}
+          onNavigate={navigateFolder}
           onBookmark={bookmarkFolder} onOpenFile={openLocalFile} />
       ) : <>
         <div className="flex flex-wrap items-center gap-3 px-3 py-1.5 text-xs border-b border-border">
-          <button className="text-accent" onClick={() => chooseFolder(true)}>+ {t("sidebar.addFolder")}</button>
+          <button className="text-accent" onClick={chooseBookmarkFolder}>+ {t("sidebar.addFolder")}</button>
           <button
             className="hover:opacity-80 transition-opacity text-sm"
             style={{
