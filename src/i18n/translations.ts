@@ -3,6 +3,8 @@ export const translations = {
     // Sidebar
     "sidebar.bookmarks": "즐겨찾기",
     "sidebar.explorer": "탐색기",
+    "explorer.locations": "기본 위치",
+    "explorer.home": "홈 디렉토리",
     "explorer.location": "파일 또는 폴더 경로",
     "explorer.open": "열기",
     "sidebar.addFolder": "폴더 추가",
@@ -154,6 +156,8 @@ export const translations = {
     // Sidebar
     "sidebar.bookmarks": "Bookmarks",
     "sidebar.explorer": "Explorer",
+    "explorer.locations": "Locations",
+    "explorer.home": "Home",
     "explorer.location": "File or folder path",
     "explorer.open": "Open",
     "sidebar.addFolder": "Add folder",

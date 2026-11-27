@@ -33,7 +33,7 @@ export default function Sidebar() {
   const [panel, setPanel] = useState<"bookmarks" | "explorer">("bookmarks");
   const [folder, setFolder] = useState<string | null>(null);
 
-  const navigateFolder = (path: string) => {
+  const navigateFolder = (path: string | null) => {
     setFolder(path);
     setPanel("explorer");
   };
