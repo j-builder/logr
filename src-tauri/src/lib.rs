@@ -16,6 +16,7 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .invoke_handler(tauri::generate_handler![
             commands::explorer::browse_directory,
+            commands::explorer::explorer_locations,
             commands::explorer::explorer_is_directory,
             commands::file::read_tail,
             commands::file::get_file_size,

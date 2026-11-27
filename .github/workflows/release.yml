@@ -84,7 +84,7 @@ jobs:
           args: --target ${{ matrix.target }}
 
       - name: Test local file explorer
-        if: matrix.target == 'aarch64-apple-darwin'
+        if: matrix.target == 'aarch64-apple-darwin' || runner.os == 'Windows'
         working-directory: src-tauri
         run: cargo test --locked --release --target ${{ matrix.target }} --lib commands::explorer::tests
 

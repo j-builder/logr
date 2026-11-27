@@ -1,6 +1,6 @@
 [package]
 name = "logr"
-version = "0.2.23"
+version = "0.2.24"
 description = "Realtime log viewer — a GUI replacement for Unix tail -f"
 authors = []
 edition = "2021"
@@ -39,6 +39,13 @@ async-trait = "0.1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 walkdir = "2"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+libc = "0.2"
+xattr = "1"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Storage_FileSystem", "Win32_System_WindowsProgramming"] }
 
 [dev-dependencies]
 tempfile = "3"
