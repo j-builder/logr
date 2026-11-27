@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { load, Store } from "@tauri-apps/plugin-store";
-import { Bookmark } from "../types";
+import { Bookmark, NewBookmark } from "../types";
 
 const STORE_FILE = "bookmarks.json";
 const STORE_KEY = "bookmarks";
@@ -9,9 +9,9 @@ interface BookmarkStore {
   bookmarks: Bookmark[];
   isLoaded: boolean;
   loadBookmarks: () => Promise<void>;
-  addBookmark: (bookmark: Omit<Bookmark, "id">) => Promise<void>;
+  addBookmark: (bookmark: NewBookmark) => Promise<void>;
   removeBookmark: (id: string) => Promise<void>;
-  updateBookmark: (id: string, updates: Partial<Bookmark>) => Promise<void>;
+  updateBookmark: (id: string, updates: Partial<Pick<Bookmark, "alias" | "group" | "lastLine">>) => Promise<void>;
 }
 
 let storeInstance: Store | null = null;
@@ -45,6 +45,11 @@ export const useBookmarkStore = create<BookmarkStore>((set, get) => ({
   },
 
   addBookmark: async (bookmarkData) => {
+    if (get().bookmarks.some((bookmark) =>
+      (bookmark.kind ?? "file") === (bookmarkData.kind ?? "file") &&
+      bookmark.filePath === bookmarkData.filePath &&
+      bookmark.sshConnectionId === bookmarkData.sshConnectionId
+    )) return;
     const id = `bm-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const next = [...get().bookmarks, { ...bookmarkData, id }];
     set({ bookmarks: next });

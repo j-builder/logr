@@ -20,7 +20,7 @@ const CONTENT = {
         items: [
           { label: "파일 선택", desc: "사이드바 하단의 '파일 열기' 버튼을 클릭합니다." },
           { label: "드래그 앤 드롭", desc: "파일을 앱 창으로 끌어다 놓으면 새 탭으로 열립니다." },
-          { label: "즐겨찾기", desc: "사이드바 즐겨찾기 목록에서 클릭하면 바로 열립니다. ★ 버튼으로 추가합니다." },
+          { label: "즐겨찾기", desc: "★로 현재 파일을 저장하고, 폴더 추가로 자주 쓰는 로컬 폴더를 저장합니다. 탐색기에서 하위 폴더의 파일을 이름으로 찾아 열 수 있습니다." },
           { label: "SSH 원격 파일", desc: "사이드바 SSH 섹션에서 접속을 추가하고, 접속 항목을 클릭해 원격 파일을 엽니다." },
         ],
       },
@@ -96,7 +96,7 @@ const CONTENT = {
           { label: "접속 추가", desc: "사이드바 SSH 섹션의 + 버튼으로 호스트/포트/사용자명/인증 방식을 설정합니다." },
           { label: "인증 방식", desc: "비밀번호 · SSH 키 파일 · 기본 키 자동 탐색(~/.ssh/id_ed25519 등) 중 선택합니다." },
           { label: "원격 파일 열기", desc: "SSH 접속 항목 클릭 → 원격 파일 경로 입력 → '열기'를 누릅니다." },
-          { label: "제한 사항", desc: "SSH 파일은 즐겨찾기에 추가할 수 없습니다." },
+          { label: "즐겨찾기", desc: "현재 SSH 파일은 ★로 즐겨찾기에 저장할 수 있습니다." },
         ],
       },
       {
@@ -134,7 +134,7 @@ const CONTENT = {
         items: [
           { label: "File picker", desc: "Click the 'Open File' button at the bottom of the sidebar." },
           { label: "Drag & drop", desc: "Drag files onto the app window to open them as new tabs." },
-          { label: "Bookmarks", desc: "Click a bookmark in the sidebar to open it instantly. Add with the ★ button." },
+          { label: "Bookmarks", desc: "Use ★ to save the current file or Add folder to save a local folder. In Explorer, search for a file by name across subfolders." },
           { label: "SSH remote files", desc: "Add an SSH connection in the sidebar, then click it to open a remote file." },
         ],
       },
@@ -210,7 +210,7 @@ const CONTENT = {
           { label: "Add connection", desc: "Click + in the SSH section of the sidebar to configure host/port/username/auth." },
           { label: "Auth methods", desc: "Password · SSH key file · Auto-detect default keys (~/.ssh/id_ed25519, etc.)" },
           { label: "Open remote file", desc: "Click an SSH connection → enter remote path → click 'Open'." },
-          { label: "Limitations", desc: "SSH files cannot be bookmarked." },
+          { label: "Bookmarks", desc: "Use ★ to bookmark the current SSH file." },
         ],
       },
       {

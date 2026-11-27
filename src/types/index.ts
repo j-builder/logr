@@ -24,15 +24,19 @@ export interface Tab {
   hasUnread: boolean;
 }
 
-export interface Bookmark {
-  id: string;
+export interface BookmarkData {
   filePath: string;
   alias: string;
-  encoding: string;
   group?: string;
   lastLine?: number;
-  sshConnectionId?: string;
 }
+
+export type NewBookmark = BookmarkData & (
+  | { kind?: "file"; encoding: string; sshConnectionId?: string }
+  | { kind: "folder"; encoding?: never; sshConnectionId?: never }
+);
+
+export type Bookmark = NewBookmark & { id: string };
 
 export interface SearchResult {
   lineIndex: number;
